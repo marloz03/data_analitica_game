@@ -93,10 +93,17 @@ export class MenuScene extends Phaser.Scene {
     });
 
     // Controls hint
-    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    const controlsText = isTouch
-      ? 'Controles táctiles aparecerán en pantalla.'
-      : 'Controles: ← → mover • ESPACIO saltar • J atacar';
+    const coarse =
+      window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    const autoTouch =
+      coarse ||
+      'ontouchstart' in window ||
+      navigator.maxTouchPoints > 0;
+    const forced = localStorage.getItem('forceTouch') === '1';
+    const controlsText =
+      forced || autoTouch
+        ? 'Controles táctiles aparecerán en pantalla.'
+        : 'Controles: ← → mover • ESPACIO saltar • J atacar';
     this.add
       .text(w / 2, h - 20, controlsText, {
         fontFamily: 'monospace',
@@ -104,6 +111,25 @@ export class MenuScene extends Phaser.Scene {
         color: '#bcbcbc',
       })
       .setOrigin(0.5);
+
+    // Touch-controls toggle (in case auto-detect failed on the device)
+    const toggleLabel = () =>
+      `📱 Controles táctiles: ${localStorage.getItem('forceTouch') === '1' ? 'SIEMPRE' : 'AUTO'}`;
+    const toggle = this.add
+      .text(w - 12, 12, toggleLabel(), {
+        fontFamily: 'monospace',
+        fontSize: '12px',
+        color: '#ffd23f',
+        backgroundColor: '#003d7a',
+        padding: { x: 6, y: 4 },
+      })
+      .setOrigin(1, 0)
+      .setInteractive({ useHandCursor: true });
+    toggle.on('pointerdown', () => {
+      const next = localStorage.getItem('forceTouch') === '1' ? '0' : '1';
+      localStorage.setItem('forceTouch', next);
+      toggle.setText(toggleLabel());
+    });
 
     // Keyboard shortcut
     this.input.keyboard.once('keydown-ENTER', () => {

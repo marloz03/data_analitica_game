@@ -12,10 +12,15 @@ export class HUDScene extends Phaser.Scene {
     this.maxHp = 3;
     this.renderHearts();
 
+    const forced = localStorage.getItem('forceTouch') === '1';
+    const coarse =
+      window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
     const isTouch =
+      forced ||
+      coarse ||
       'ontouchstart' in window ||
       navigator.maxTouchPoints > 0 ||
-      window.innerWidth < 900;
+      (navigator.msMaxTouchPoints && navigator.msMaxTouchPoints > 0);
 
     if (isTouch) {
       this.buildTouchControls();
@@ -40,9 +45,11 @@ export class HUDScene extends Phaser.Scene {
   }
 
   buildTouchControls() {
-    const game = this.scene.get('GameScene');
-    const flags = game ? game.touchInput : null;
-    if (!flags) return;
+    // HUDScene owns the touch flags so we never race with GameScene.create().
+    if (!this.touchFlags) {
+      this.touchFlags = { left: false, right: false, jump: false, attack: false };
+    }
+    const flags = this.touchFlags;
 
     const padY = GAME_HEIGHT - 70;
     const padXLeft = 70;

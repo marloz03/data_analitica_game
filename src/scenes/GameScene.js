@@ -23,6 +23,12 @@ export class GameScene extends Phaser.Scene {
     super('GameScene');
   }
 
+  init() {
+    // Initialize before create() so HUDScene can attach touch buttons
+    // without a race condition.
+    this.touchInput = { left: false, right: false, jump: false, attack: false };
+  }
+
   create() {
     this.physics.world.setBounds(0, 0, LEVEL_WIDTH, LEVEL_HEIGHT_PX());
     this.cameras.main.setBounds(0, 0, LEVEL_WIDTH, LEVEL_HEIGHT_PX());
@@ -86,8 +92,8 @@ export class GameScene extends Phaser.Scene {
       E: Phaser.Input.Keyboard.KeyCodes.E,
     });
 
-    // Touch flags fed by HUDScene
-    this.touchInput = { left: false, right: false, jump: false, attack: false };
+    // Touch flags fed by HUDScene; the object was created in init()
+    // so HUDScene can grab a stable reference.
 
     // Zone banner
     this.currentZoneIndex = -1;
@@ -399,7 +405,8 @@ export class GameScene extends Phaser.Scene {
     // Aggregate inputs (keyboard + touch)
     const kb = this.cursors;
     const k = this.keys;
-    const t = this.touchInput;
+    const hud = this.scene.get('HUDScene');
+    const t = (hud && hud.touchFlags) || this.touchInput;
     const inputState = {
       left: kb.left.isDown || k.A.isDown || t.left,
       right: kb.right.isDown || k.D.isDown || t.right,
